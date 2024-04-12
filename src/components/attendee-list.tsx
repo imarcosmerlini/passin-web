@@ -21,10 +21,18 @@ interface Attendee {
 }
 
 export function AttendeeList() {
-  const [search, setSearch] = useState('')
-  const [page, setPage] = useState(1)
-  const [attendees, setAttendees] = useState<Attendee[]>([])
+  const [search, setSearch] = useState(() => {
+    const url = new URL(window.location.toString());
+    const search = url.searchParams.get('search');
+    return search ? search : '';
 
+  })
+  const [page, setPage] = useState(() => {
+    const url = new URL(window.location.toString());
+    const page = url.searchParams.get('page');
+    return page ? Number(page) : 1;
+  })
+  const [attendees, setAttendees] = useState<Attendee[]>([])
   const totalPages = Math.ceil(attendees.length / 10);
 
   useEffect(() => {
@@ -41,25 +49,39 @@ export function AttendeeList() {
       });
   }, [page, search])
 
+  function setCurrentPage(page: number) {
+    const url = new URL(window.location.toString());
+    url.searchParams.set('page', String(page));
+    window.history.pushState({}, '', url.toString());
+    setPage(page);
+  }
+
+  function setQuerySearch(search: string) {
+    const url = new URL(window.location.toString());
+    url.searchParams.set('search', search);
+    window.history.pushState({}, '', url);
+    setSearch(search);
+  }
+
   function onSearchInputChanged(event: ChangeEvent<HTMLInputElement>) {
-    setSearch(event.target.value);
-    setPage(1);
+    setQuerySearch(event.target.value);
+    setCurrentPage(1);
   }
 
   function goToNextPage() {
-    setPage(page + 1);
+    setCurrentPage(page + 1);
   }
 
   function goToPreviousPage() {
-    setPage(page - 1);
+    setCurrentPage(page - 1);
   }
 
   function goToFirstPage() {
-    setPage(1);
+    setCurrentPage(1);
   }
 
   function goToLastPage() {
-    setPage(totalPages);
+    setCurrentPage(page + 1);
   }
 
   return (
@@ -70,6 +92,7 @@ export function AttendeeList() {
           <Search className='size-4 text-emerald-300'/>
           <input
             onChange={onSearchInputChanged}
+            value={search}
             className='bg-transparent flex-1 outline-none border-0 p-0 text-sm focus:ring-0'
             placeholder='Buscar participantes...'
           ></input>
